@@ -10,6 +10,11 @@
     "ghcr.io/devcontainers-extra/features/bun:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
+  "mounts": [
+    "source=fishpercolator-bun-cache,target=/home/vscode/.bun/install/cache,type=volume",
+    "source=fishpercolator-gh,target=/home/vscode/.config/gh,type=volume",
+    "source=fishpercolator-claude,target=/home/vscode/.claude,type=volume"
+  ],
   "customizations": {
     "vscode": {
       "extensions": [
