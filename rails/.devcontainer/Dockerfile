@@ -12,8 +12,17 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists/*
 
 # The native installer rather than the npm package, so the image doesn't need Node.
+#
+# The directories are the targets of the shared volumes described in the README. Creating them here
+# means a new volume takes their vscode ownership on first mount instead of being owned by root.
 USER vscode
 RUN curl -fsSL https://claude.ai/install.sh | bash && \
-    mkdir -p /home/vscode/.bun/install/cache
+    mkdir -p /home/vscode/.bun/install/cache /home/vscode/.gems /home/vscode/.config/gh /home/vscode/.claude
 
-ENV BINDING="0.0.0.0"
+# Gems go in a shared volume rather than Ruby's own gem directory, which holds Ruby's default gems.
+# Bundler keeps each Ruby ABI in its own subdirectory, so one volume serves every Ruby version.
+# Clean is off because a `bundle clean` in one project would remove gems other projects use.
+ENV BINDING="0.0.0.0" \
+    BUNDLE_PATH="/home/vscode/.gems" \
+    BUNDLE_CLEAN="false" \
+    CLAUDE_CONFIG_DIR="/home/vscode/.claude"

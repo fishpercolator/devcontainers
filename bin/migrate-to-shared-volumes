@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Copies Claude Code and gh state out of existing devcontainers into the shared volumes, so it
+# survives the switch to them. Run it on the Docker host (or in a container with Docker access)
+# before rebuilding, while the old containers still exist; they can be running or stopped.
+#
+#   bin/migrate-to-shared-volumes                 # every devcontainer on this machine
+#   bin/migrate-to-shared-volumes wdil-rails-app-1 # just these containers
+#
+# Files already in a volume are kept, so when two containers hold the same file (credentials,
+# settings) the first one copied wins. Per-project state, such as Claude's projects/ directory,
+# merges because each project's paths are different.
+set -euo pipefail
+
+prefix="${VOLUME_PREFIX:-fishpercolator}"
+
+if [ "$#" -gt 0 ]; then
+  containers=("$@")
+else
+  mapfile -t containers < <(docker ps -a --filter label=devcontainer.local_folder --format '{{.Names}}')
+fi
+
+if [ "${#containers[@]}" -eq 0 ]; then
+  echo "No devcontainers found." >&2
+  exit 1
+fi
+
+# Unpacks a tar stream from stdin into a volume, using the container's own image so nothing extra
+# needs pulling, and hands the result to vscode (uid 1000).
+copy_into() {
+  local volume="$1" image="$2"; shift 2
+  docker volume create "$volume" >/dev/null
+  docker run --rm -i --user 0 --entrypoint sh -v "$volume:/dst" "$image" \
+    -c "tar -x --skip-old-files -C /dst $* && chown -R 1000:1000 /dst"
+}
+
+for container in "${containers[@]}"; do
+  image="$(docker inspect -f '{{.Image}}' "$container")"
+  echo "== $container"
+
+  if docker cp "$container:/home/vscode/.claude" - >/dev/null 2>&1; then
+    docker cp "$container:/home/vscode/.claude" - | copy_into "$prefix-claude" "$image" --strip-components=1
+    echo "   ~/.claude -> $prefix-claude"
+  fi
+  if docker cp "$container:/home/vscode/.claude.json" - >/dev/null 2>&1; then
+    docker cp "$container:/home/vscode/.claude.json" - | copy_into "$prefix-claude" "$image"
+    echo "   ~/.claude.json -> $prefix-claude"
+  fi
+  if docker cp "$container:/home/vscode/.config/gh" - >/dev/null 2>&1; then
+    docker cp "$container:/home/vscode/.config/gh" - | copy_into "$prefix-gh" "$image" --strip-components=1
+    echo "   ~/.config/gh -> $prefix-gh"
+  fi
+done
