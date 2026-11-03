@@ -71,7 +71,8 @@ hand.
 - **Never run `bundle clean`.** Every project's gems are in the same directory, so cleaning one
   project's bundle deletes the gems every other project depends on. `BUNDLE_CLEAN=false` stops
   Bundler doing it automatically after `bundle install`, which its docs say becomes the default.
-  If the volume does lose gems, `bin/setup` or `bundle install` in each project puts them back.
+  If the volume does lose gems, `bin/setup` or `bundle install` in each project puts them back. Old
+  versions therefore build up over time: see [Shared gems](#shared-gems) for clearing them out.
 - **`gem list` doesn't show a project's gems**, because they're in `BUNDLE_PATH` rather than Ruby's
   own gem directory. Use `bundle list`, and run commands with `bundle exec` or the project's
   binstubs.
@@ -112,10 +113,80 @@ pick up anything the old container changed since the first run. Gems aren't copi
 ## Rebuilds
 
 Images rebuild on every push to `main` and on the first of each month. After a project picks up a
-rebuilt image, the old one stays on disk until it's pruned:
+rebuilt image, the old one stays on disk until it's pruned (see below).
+
+## Cleaning up disk space
+
+Run these on the Docker host, or in a devcontainer with Docker access. Start by seeing where the
+space has gone:
 
 ```sh
-docker image prune
+docker system df     # totals for images, containers, volumes and build cache
+docker system df -v  # the same, item by item
+```
+
+### Routine tidy
+
+These are safe to run at any time. They only remove things nothing is using, and everything they
+remove can be rebuilt or downloaded again.
+
+```sh
+docker image prune    # images left untagged when a newer version was built or pulled
+docker builder prune  # build cache not used by any image
+```
+
+### Deeper clean
+
+When the routine tidy isn't enough. Each of these has a cost, given alongside it.
+
+- **Images that no container uses:** `docker image prune -a`. This includes the base images of
+  projects you haven't opened recently, and Selenium or Postgres images replaced by a newer tag,
+  which are typically the biggest wins. The next rebuild of those projects downloads their images
+  again.
+- **Stopped containers:** `docker container prune`. A stopped devcontainer is usually just a
+  project you don't have open, and its writable layer holds about 1 GB of caches and logs. With
+  the shared volumes, nothing you need is lost: the project is rebuilt next time you open it.
+  Shell history and anything else saved in the container itself outside the volumes is gone.
+- **The VS Code server:** `docker volume rm vscode`, with every devcontainer stopped. The Dev
+  Containers extension keeps every VS Code server version it has installed in this volume, and
+  downloads the current one again next time it connects.
+- **The bun cache:** `docker volume rm fishpercolator-bun-cache`, with every devcontainer stopped.
+  bun downloads packages again on the next `bun install`.
+
+### Shared gems
+
+`fishpercolator-gems` keeps every gem version any project has installed, because `bundle clean`
+can't be used on it. Expect it to grow by roughly 1–2 GB a year across the Rails projects.
+When it's big, empty it, with the Rails devcontainers stopped:
+
+```sh
+docker volume rm fishpercolator-gems
+```
+
+Each project's next `bin/setup` (which runs when the devcontainer is rebuilt) or `bundle install`
+installs just what its lockfile needs, at a cost of a few minutes per project. Gems are the only
+thing in this volume, so nothing else is lost.
+
+A Ruby minor-version upgrade (4.0 to 4.1, say) is a good time to do this anyway. The old version's
+`ruby/<version>/` directory stops being used, unless another project is still on that version.
+Patch upgrades (4.0.8 to 4.0.9) keep the same directory and reuse its gems.
+
+### Volumes to leave alone
+
+- **`fishpercolator-claude` and `fishpercolator-gh`** hold logins, and in Claude Code's case the
+  memory and sessions for every project. Removing them can't be undone.
+- **`<project>_postgres-data`** (and dump's `dump_valkey-data`) hold each project's development
+  database. Removing one means running `bin/setup` (or `bin/rails db:setup`) in that project to
+  recreate it, losing any data that isn't in its seeds.
+- **`docker volume prune --all`** removes every volume no container is using, which includes all
+  of the above for any project whose container has been removed. Use it only if you've checked
+  `docker system df -v` first. Without `--all`, `docker volume prune` only removes anonymous
+  volumes, which these setups don't create.
+
+To stop every devcontainer, including the one you might be running these commands from:
+
+```sh
+docker stop $(docker ps -q --filter label=devcontainer.local_folder)
 ```
 
 ## Docker host settings
