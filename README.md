@@ -178,25 +178,40 @@ When the routine tidy isn't enough. Each of these has a cost, given alongside it
   project you don't have open, and its writable layer holds about 1 GB of caches and logs. With
   the shared volumes, nothing you need is lost: the project is rebuilt next time you open it.
   Shell history and anything else saved in the container itself outside the volumes is gone.
-- **The VS Code server:** `docker volume rm vscode`, with every devcontainer stopped. The Dev
-  Containers extension keeps every VS Code server version it has installed in this volume, and
-  downloads the current one again next time it connects.
-- **The bun cache:** `docker volume rm fishpercolator-bun-cache`, with every devcontainer stopped.
-  bun downloads packages again on the next `bun install`.
+The shared volumes below are cleared from inside a devcontainer rather than removed. Docker won't
+remove a volume that any container references, even a stopped one, so removing one would mean
+deleting every devcontainer that mounts it first.
+
+- **Old VS Code server versions:** the Dev Containers extension's `vscode` volume, mounted at
+  `/vscode` in every devcontainer, gains a server version (about 640 MB) each time VS Code updates.
+  If it has grown, close every devcontainer window but one, then from a terminal in that one:
+
+  ```sh
+  ls /vscode/vscode-server/bin/linux-x64/  # one directory per version
+  ps -eo args | grep -oE '/vscode/vscode-server/bin/linux-x64/[0-9a-f]+' | sort -u  # the running one
+  ```
+
+  Delete every directory except the running one. Closing the other windows matters because a
+  devcontainer still running an older version would lose its server. Its next connection would
+  download it again.
+- **The bun cache:** `bun pm cache prune` in any devcontainer removes packages older than 30 days,
+  and `bun pm cache rm` empties it. bun downloads whatever it needs again on the next `bun install`.
 
 ### Shared gems
 
 `fishpercolator-gems` keeps every gem version any project has installed, because `bundle clean`
 can't be used on it. Expect it to grow by roughly 1–2 GB a year across the Rails projects.
-When it's big, empty it, with the Rails devcontainers stopped:
+When it's big, empty it from a terminal in any Rails devcontainer:
 
 ```sh
-docker volume rm fishpercolator-gems
+rm -rf ~/.gems/ruby
 ```
 
-Each project's next `bin/setup` (which runs when the devcontainer is rebuilt) or `bundle install`
-installs just what its lockfile needs, at a cost of a few minutes per project. Gems are the only
-thing in this volume, so nothing else is lost.
+Then run `bundle install` in each Rails project you have open, which installs just what its lockfile
+needs, at a cost of a few minutes per project. Until then, anything running in those projects (a
+`bin/dev` server, a test run) fails to find its gems. Projects you don't have open reinstall theirs
+when `bin/setup` runs at their next rebuild, or with `bundle install` when you open them. Gems are
+the only thing in this volume, so nothing else is lost.
 
 A Ruby minor-version upgrade (4.0 to 4.1, say) is a good time to do this anyway. The old version's
 `ruby/<version>/` directory stops being used, unless another project is still on that version.
@@ -213,15 +228,6 @@ Patch upgrades (4.0.8 to 4.0.9) keep the same directory and reuse its gems.
   of the above for any project whose container has been removed. Use it only if you've checked
   `docker system df -v` first. Without `--all`, `docker volume prune` only removes anonymous
   volumes, which these setups don't create.
-
-To stop every devcontainer, including the one you might be running these commands from:
-
-```sh
-docker stop $(docker ps -q --filter label=devcontainer.local_folder)
-```
-
-This leaves each project's Postgres, Selenium and Valkey containers running. They don't use the
-shared volumes, so they don't need stopping to remove them.
 
 ## Docker host settings
 
