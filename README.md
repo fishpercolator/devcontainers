@@ -189,6 +189,9 @@ To stop every devcontainer, including the one you might be running these command
 docker stop $(docker ps -q --filter label=devcontainer.local_folder)
 ```
 
+This leaves each project's Postgres, Selenium and Valkey containers running. They don't use the
+shared volumes, so they don't need stopping to remove them.
+
 ## Docker host settings
 
 Docker's build cache grows without limit by default. On each host, cap it in
