@@ -1,0 +1,60 @@
+name: Build images
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Monthly, to pick up security updates and new Claude Code releases. Not more often: every
+  # rebuild leaves the previous image behind on each machine until it's pruned.
+  schedule:
+    - cron: "0 4 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  rails:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ["4.0.9", "3.4.12"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: devcontainers/ci@v0.3
+        env:
+          RUBY_VERSION: ${{ matrix.ruby }}
+        with:
+          subFolder: rails
+          imageName: ghcr.io/${{ github.repository_owner }}/devcontainer-rails
+          imageTag: ${{ matrix.ruby }}
+          push: filter
+          refFilterForPush: refs/heads/main
+          eventFilterForPush: push,schedule,workflow_dispatch
+          runCmd: bash -ic 'ruby -v && bun --version && claude --version && psql --version && chromium --version'
+
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: devcontainers/ci@v0.3
+        with:
+          subFolder: node
+          imageName: ghcr.io/${{ github.repository_owner }}/devcontainer-node
+          imageTag: "24"
+          push: filter
+          refFilterForPush: refs/heads/main
+          eventFilterForPush: push,schedule,workflow_dispatch
+          runCmd: bash -ic 'node -v && bun --version && claude --version'

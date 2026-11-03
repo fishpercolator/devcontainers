@@ -1,0 +1,23 @@
+{
+  "name": "fishpercolator-rails",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "RUBY_VERSION": "${localEnv:RUBY_VERSION:4.0.9}"
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/rails/devcontainer/features/postgres-client": {
+      "version": "18"
+    },
+    "ghcr.io/rails/devcontainer/features/bun": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code"
+      ]
+    }
+  }
+}

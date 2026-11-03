@@ -1,0 +1,19 @@
+{
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "1.1.3",
+      "resolved": "ghcr.io/devcontainers/features/github-cli@sha256:bd7ab48a832228f633239277552c30b353867fef2e5b037e064b4e64f0b843f2",
+      "integrity": "sha256:bd7ab48a832228f633239277552c30b353867fef2e5b037e064b4e64f0b843f2"
+    },
+    "ghcr.io/rails/devcontainer/features/bun": {
+      "version": "1.0.2",
+      "resolved": "ghcr.io/rails/devcontainer/features/bun@sha256:08057c197a8cde49b08749681607bf0d69aed79e280225cf43ca5d1782028789",
+      "integrity": "sha256:08057c197a8cde49b08749681607bf0d69aed79e280225cf43ca5d1782028789"
+    },
+    "ghcr.io/rails/devcontainer/features/postgres-client": {
+      "version": "1.2.0",
+      "resolved": "ghcr.io/rails/devcontainer/features/postgres-client@sha256:7e6b118646d6e0d82a9ec06e81ad1b5406f7042f0279d35fff3a7a612be7a050",
+      "integrity": "sha256:7e6b118646d6e0d82a9ec06e81ad1b5406f7042f0279d35fff3a7a612be7a050"
+    }
+  }
+}
