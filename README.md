@@ -15,15 +15,46 @@ they're on the same Ruby, so prefer moving a project to a listed version over ad
 
 ## Using an image
 
+A project that needs nothing beyond what the image provides uses the image directly, with no
+`Dockerfile`:
+
+```yaml
+# .devcontainer/compose.yaml
+services:
+  rails-app:
+    # Keep the tag in step with .ruby-version.
+    image: ghcr.io/fishpercolator/devcontainer-rails:4.0.9
+```
+
+A project that adds packages of its own builds on the image in a `Dockerfile`:
+
 ```dockerfile
 # .devcontainer/Dockerfile
 ARG RUBY_VERSION=4.0.9
 FROM ghcr.io/fishpercolator/devcontainer-rails:$RUBY_VERSION
+
+USER root
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y imagemagick && \
+    rm -rf /var/lib/apt/lists/*
+USER vscode
 ```
 
-Add only what that project needs on top, as features in its `devcontainer.json` or packages in its
-`Dockerfile`. Anything added there sits above the shared layers, so it doesn't stop them being
-shared.
+Devcontainer features go in the project's `devcontainer.json` either way. Anything a project adds
+sits above the shared layers, so it doesn't stop them being shared.
+
+A compose-based project can only build from a `Dockerfile` if it also has at least one devcontainer
+feature. With no features, the devcontainer CLI builds the service with `docker compose build`, from
+a Dockerfile it generates in `/tmp`, and compose's `buildx bake` refuses to read files outside the
+build context:
+
+```
+additional privileges requested: pass "--allow=fs.read=/tmp/devcontainercli-.../Dockerfile-with-features" to grant requested privileges
+```
+
+With features, the CLI builds a different way, which doesn't hit this. So a project with
+no features uses `image:`, and a project that needs its own packages but has no features installs
+them through a feature instead of a `Dockerfile`, or asks for them to be added to the base image.
 
 ## Shared volumes
 
