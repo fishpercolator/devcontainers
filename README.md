@@ -6,8 +6,8 @@ once per machine rather than once per project.
 
 | Image | Contents | Used by |
 |---|---|---|
-| `ghcr.io/fishpercolator/devcontainer-rails:<ruby version>` | Rails devcontainer Ruby image, postgres-client 18, bun, gh, libvips, Chromium, Claude Code | shufflehorse, wdil, name.pn, dump |
-| `ghcr.io/fishpercolator/devcontainer-node:24` | Debian trixie, Node 24, bun, gh, Claude Code | fuckingtomato |
+| `ghcr.io/fishpercolator/devcontainer-rails:<ruby version>` | Rails devcontainer Ruby image, postgres-client 18, bun, gh, libvips, Chromium, Claude Code, mise | shufflehorse, wdil, name.pn, dump |
+| `ghcr.io/fishpercolator/devcontainer-node:24` | Debian trixie, Node 24, bun, gh, Claude Code, mise | fuckingtomato |
 
 Ruby images are built for each version in the `rails` job's matrix in
 [`.github/workflows/build.yml`](.github/workflows/build.yml). Projects only share layers when

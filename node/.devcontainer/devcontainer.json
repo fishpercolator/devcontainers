@@ -8,7 +8,11 @@
       "version": "24"
     },
     "ghcr.io/devcontainers-extra/features/bun:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers-extra/features/mise:1": {}
+  },
+  "remoteEnv": {
+    "PATH": "/home/vscode/.local/share/mise/shims:${containerEnv:PATH}"
   },
   "mounts": [
     "source=fishpercolator-bun-cache,target=/home/vscode/.bun/install/cache,type=volume",

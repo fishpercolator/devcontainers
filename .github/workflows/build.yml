@@ -41,7 +41,7 @@ jobs:
             push
             schedule
             workflow_dispatch
-          runCmd: bash -ic 'ruby -v && bun --version && claude --version && psql --version && chromium --version'
+          runCmd: bash -ic 'ruby -v && bun --version && claude --version && mise --version && psql --version && chromium --version'
 
   node:
     runs-on: ubuntu-latest
@@ -63,4 +63,4 @@ jobs:
             push
             schedule
             workflow_dispatch
-          runCmd: bash -ic 'node -v && bun --version && claude --version'
+          runCmd: bash -ic 'node -v && bun --version && claude --version && mise --version && [[ $PATH == /home/vscode/.local/share/mise/shims:* ]]'
