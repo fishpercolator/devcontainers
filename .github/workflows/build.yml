@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ["4.0.9", "3.4.12"]
+        ruby: ["4.0.10", "3.4.12"]
     steps:
       - uses: actions/checkout@v7
       - uses: docker/login-action@v4

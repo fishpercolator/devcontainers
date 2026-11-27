@@ -1,4 +1,4 @@
-ARG RUBY_VERSION=4.0.9
+ARG RUBY_VERSION=4.0.10
 FROM ghcr.io/rails/devcontainer/images/ruby:${RUBY_VERSION}
 
 LABEL org.opencontainers.image.source="https://github.com/fishpercolator/devcontainers"

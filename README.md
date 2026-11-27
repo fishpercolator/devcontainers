@@ -23,14 +23,14 @@ A project that needs nothing beyond what the image provides uses the image direc
 services:
   rails-app:
     # Keep the tag in step with .ruby-version.
-    image: ghcr.io/fishpercolator/devcontainer-rails:4.0.9
+    image: ghcr.io/fishpercolator/devcontainer-rails:4.0.10
 ```
 
 A project that adds packages of its own builds on the image in a `Dockerfile`:
 
 ```dockerfile
 # .devcontainer/Dockerfile
-ARG RUBY_VERSION=4.0.9
+ARG RUBY_VERSION=4.0.10
 FROM ghcr.io/fishpercolator/devcontainer-rails:$RUBY_VERSION
 
 USER root

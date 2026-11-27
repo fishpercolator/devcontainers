@@ -3,7 +3,7 @@
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
-      "RUBY_VERSION": "${localEnv:RUBY_VERSION:4.0.9}"
+      "RUBY_VERSION": "${localEnv:RUBY_VERSION:4.0.10}"
     }
   },
   "features": {
